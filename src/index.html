@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="cs">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Warcrime</title>
+  <link rel="icon" href="assets/animations/fireball/3.png"></link>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); /* dark blue gradient */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    canvas {
+      height: 100vh;
+      aspect-ratio: 4 / 3;
+      max-width: 100vw;
+      image-rendering: pixelated;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas width="640" height="480" id="canvas"></canvas>
+
+  <script src="math.js"></script>
+  <script src="controls.js"></script>
+  <script src="controllers.js"></script>
+  <script src="assets/assets.js"></script>
+  <script src="map.js"></script>
+  <script src="item.js"></script>
+  <script src="inventory.js"></script>
+  <script src="entity.js"></script>
+
+  <script src="main.js"></script>
+</body>
+
+</html>
