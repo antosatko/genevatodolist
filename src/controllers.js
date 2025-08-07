@@ -1,7 +1,7 @@
 class PlayerController {
   constructor() { }
 
-  update(entity) {
+  update(game, entity) {
     let left = keys["left"]
     let right = keys["right"]
     if (left > 0 && right < 1) {
@@ -20,10 +20,10 @@ class PlayerController {
       entity.inventory.selectRight()
     }
     if (keys["usePrimary"] == 1) {
-      entity.inventory.usePrimary(entity)
+      entity.inventory.usePrimary(game, entity)
     }
     if (keys["useSecondary"] == 1) {
-      entity.inventory.useSecondary(entity)
+      entity.inventory.useSecondary(game, entity)
     }
     if (keys["select1"] == 1) {
       entity.inventory.selected = 0
@@ -46,7 +46,7 @@ class AIController {
     this.direction = -1
   }
 
-  update(entity) {
+  update(game, entity) {
     if (entity.onGround && Math.random() < 0.01) {
       entity.velocity[1] = -15
     }
@@ -67,7 +67,7 @@ class PortalController {
     this.budget = budget
   }
 
-  update(entity) {
+  update(game, entity) {
     if (frame % 35 != 0) return
     this.budget--
     let budgetMax = Math.min(this.budget, 3)
@@ -82,7 +82,7 @@ class PortalController {
       let item = new InventoryItem(itemKeys[(Math.random() * itemKeys.length)>>0])
       spawn.inventory.addItem(item)
     }
-    entities.push(spawn)
+    game.entities.push(spawn)
 
     this.frame = 0
     if (this.budget <= 0) entity.remove = true
@@ -102,10 +102,10 @@ class AttackController {
     this.effect = effect
   }
 
-  update(entity) {
+  update(game, entity) {
     let hb = entity.physicalHitbox()
-    for (let i in entities) {
-      let other = entities[i]
+    for (let i in game.entities) {
+      let other = game.entities[i]
       if (!other.unit || other == this || this.ignore.includes(other)) continue
       let otherHb = other.physicalHitbox()
       let hit = rectCollision(hb, otherHb)
@@ -135,7 +135,7 @@ class StunEffect {
     entity.velocity = [...this.velocity]
   }
 
-  update(entity) {
+  update(game, entity) {
     return entity.onGround
       && Math.abs(entity.velocity[0]) < 0.3
       && this.stunTimer-- == 1
@@ -152,7 +152,7 @@ class WaitEffect {
     
   }
 
-  update(entity) {
+  update(game, entity) {
     return this.waitFor.remove
   }
 }

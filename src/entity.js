@@ -80,15 +80,15 @@ class Entity {
     }
   }
 
-  update() {
+  update(game) {
     if (this.lifespan?.update(this)) {
       this.remove = true
       return
     }
     if (this.effect.current) {
-      this.effect.update(this)
+      this.effect.update(game, this)
     } else {
-      this.controller?.update(this)
+      this.controller?.update(game, this)
     }
     this.inventory?.update(this)
     if (!this.physical) return
@@ -168,11 +168,8 @@ class Entity {
     }
   }
 
-  onRemove() {
-    if (this.inventory) {
-      
-    }
-    this.lifespan?.remove(this)
+  onRemove(game) {
+    this.lifespan?.remove(game, this)
   }
 }
 
@@ -215,7 +212,7 @@ class TimerLifespan {
     return this.current == 0
   }
 
-  remove(entity) {
+  remove(game, entity) {
     
   }
 }
@@ -226,11 +223,11 @@ class PlayerLifespan {
   }
 
   update(entity) {
-    return false
+    
   }
 
-  remove(entity) {
-    gameOver = true
+  remove(game, entity) {
+    game.gameOver = true
   }
 }
 

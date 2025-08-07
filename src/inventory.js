@@ -3,12 +3,12 @@ let items = {
     "img": "sekacek",
     "joint": [37, 57],
     "cooldown": 250,
-    "secondary": function (entity) {
-      entity.position[1] -= 50
+    "secondary": function (game, entity, item) {
+      
     },
     "primaryRecovery": 60,
-    "primary": function (entity) {
-      entity.velocity[1] *= 2
+    "primary": function (game, entity, item) {
+      
     }
   },
   "vidlicka": {
@@ -16,7 +16,7 @@ let items = {
     "joint": [31, 53],
     "cooldown": 750,
     "secondaryRecovery": 20,
-    "secondary": function(entity, item) {
+    "secondary": function(game, entity, item) {
       let hb = entity.physicalHitbox()
       let itemHb = assetTable.objects.wideswoosh.hitbox
       let swooshX = hb[0] + hb[2] / 2 - (itemHb[2] - itemHb[0]) / 2
@@ -27,7 +27,7 @@ let items = {
       swoosh.controller = new AttackController(entity, 5, -7, [entity], -1, new StunEffect([entity.direction * 10, -2], 6))
       let wait = new WaitEffect(swoosh)
       entity.effect.set(wait)
-      entities.push(swoosh)
+      game.entities.push(swoosh)
       let numBalls = 17
       let angleSpread = Math.PI
 
@@ -40,11 +40,11 @@ let items = {
         let ball = new Entity(entity.position, "fireball")
         ball.controller = new AttackController(entity, 7, 0, [entity], 1)
         ball.velocity = [vx, vy]
-        entities.push(ball)
+        game.entities.push(ball)
       }
     },
     "primaryRecovery": 20,
-    "primary": function(entity, item) {
+    "primary": function(game, entity, item) {
       let hb = entity.physicalHitbox()
       let attackHb = assetTable.animations.stab.res
       let stabX = hb[0] + ((entity.direction == 1) ? hb[2] : (-attackHb[1] - hb[2]))
@@ -56,7 +56,7 @@ let items = {
       stab.controller = new AttackController(entity, 9, -10, [entity], -1, new StunEffect([entity.direction * 15, -2], 2))
       let wait = new WaitEffect(stab)
       entity.effect.set(wait)
-      entities.push(stab)
+      game.entities.push(stab)
     }
   },
   "warcrime": {
@@ -78,18 +78,18 @@ class Inventory {
     this.recovery = 0
   }
 
-  usePrimary(entity) {
+  usePrimary(game, entity) {
     if (this.recovery > 0) return
     let item = this.getSelected()
     if (!item || !item.desc.primary) return
     if (item.desc.primaryRecovery) this.addRecovery(item.desc.primaryRecovery)
     
-    if (item.desc.primary(entity, item)) {
+    if (item.desc.primary(game, entity, item)) {
       this.slots[this.selected] = undefined
     }
   }
 
-  useSecondary(entity) {
+  useSecondary(game, entity) {
     if (this.recovery > 0) return
     let item = this.getSelected()
     if (!item || !item.desc.secondary) return
@@ -97,7 +97,7 @@ class Inventory {
 
     let cd = item.cooldown
     if (!cd || cd.useAll()) {
-      if (item.desc.secondary(entity, item)) {
+      if (item.desc.secondary(game, entity, item)) {
         this.slots[this.selected] = undefined
       }
     }
