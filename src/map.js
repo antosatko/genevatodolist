@@ -6,45 +6,45 @@ let mapSpec = [
   ["wall", 14, 8, 17, 8],
   ["wall", 17, 5, 18, 5],
   ["wall", 19, 0, 19, 14],
-]
+];
 
-class MapTyle {
+class MapTile {
   constructor(flags = []) {
-    this.wall = false
-    this.portal = false
-    this.addFlags(flags)
+    this.wall = false;
+    this.portal = false;
+    this.addFlags(flags);
   }
 
   addFlags(flags) {
     for (let flag of flags) {
-      this[flag] = true
+      this[flag] = true;
     }
   }
 }
 
 class GameMap {
   constructor() {
-    this.image = new Image()
-    this.image.src = "assets/images/map.png"
-    this.tyles = []
+    this.image = new Image();
+    this.image.src = "assets/images/map.png";
+    this.tiles = [];
     for (let x = 0; x < 20; x++) {
-      this.tyles.push([])
+      this.tiles.push([]);
       for (let y = 0; y < 15; y++) {
-        this.tyles[x].push(new MapTyle())
+        this.tiles[x].push(new MapTile());
       }
     }
     for (let spec of mapSpec) {
-      let [flag, left, top, right, bottom] = spec
+      let [flag, left, top, right, bottom] = spec;
       for (let x = left; x <= right; x++) {
         for (let y = top; y <= bottom; y++) {
-          this.tyles[x][y].addFlags([flag])
+          this.tiles[x][y].addFlags([flag]);
         }
       }
     }
   }
   draw() {
-    c.drawImage(this.image, 0, 0, 640, 480)
+    c.drawImage(this.image, 0, 0, 640, 480);
   }
 }
 
-let map = new GameMap()
+let map = new GameMap();
