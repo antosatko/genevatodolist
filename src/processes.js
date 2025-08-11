@@ -3,6 +3,7 @@ class ProcManager {
     this.current = undefined
     this.next = undefined
     this.frame = 1
+    this.overlays = []
   }
 
   open(proc) {
@@ -19,23 +20,38 @@ class ProcManager {
       this.current.open()
     }
 
-    this.current?.update(this.frame)
+    let overlays = this.overlays.length
+    if (!overlays) {
+      this.current?.update(this.frame)
+    } else {
+      this.overlays[overlays-1].update(this.frame)
+      this.overlays = this.overlays.filter(o => !o.remove)
+    }
     updateInputs()
     this.frame++
   }
 
   draw() {
     this.current?.draw()
+    for (let i in this.overlays) {
+      this.overlays[i].draw()
+    }
   }
 }
 
 class GameProc {
   constructor() {
+    this.overlayFg = new Image()
+    this.overlayFg.src = "assets/images/overlay.png"
+    this.overlayBg = new Image()
+    this.overlayBg.src = "assets/images/overlay-bg.png"
+    this.token = assets.images.token.img
+    this.tokenSlot = assets.images.tokenslot.img
     this.open()
   }
 
   update(frame) {
-    if (frame % 60 == 0) {
+    if (this.frame % 60 == 0) {
       this.player.health.add((1 - this.style.ratio()) * -5)
       this.style.add(-1)
     }
@@ -44,13 +60,13 @@ class GameProc {
     }
     for (let i in this.entities) {
       let entity = this.entities[i]
-      entity.effect.fix()
+      entity.remote.fix()
       if (entity.remove) {
         entity.onRemove(this)
       }
     }
     this.entities = this.entities.filter(e => !e.remove)
-  
+    this.frame++
   }
 
   draw() {
@@ -67,6 +83,18 @@ class GameProc {
     c.fillStyle = "yellow"
     c.fillRect(530, 432, 105 * this.style.ratio(), 44)
     c.drawImage(this.overlayFg, 0, 0)
+    for (let i = 0; i < 2; i++) {
+      for (let j = 0; j < 5; j++) {
+        445
+        let idx = i * 5 + j
+        let x = 143 + i * 242 + j * 24
+        let y = 445
+        c.drawImage(this.tokenSlot, x, y)
+        if (idx < this.spins.current) {
+          c.drawImage(this.token, x, y)
+        }
+      }
+    }
     this.player.inventory.draw()
   }
 
@@ -75,18 +103,195 @@ class GameProc {
     this.entities = []
     this.style = new Bar(100)
     this.style.current = 50
-  
+    this.spins = new CheckedCounter(0, 9, true)
+    this.spins.add(2)
+    this.frame = 0
+
     this.player = new Entity([250, 200], "dobrak")
     this.player.controller = new PlayerController()
     this.player.health = new Bar(180)
     this.player.lifespan = new PlayerLifespan()
     this.player.inventory = new Inventory()
     this.entities.push(this.player)
+  }
+
+  close() {
     
-    this.overlayFg = new Image()
-    this.overlayFg.src = "assets/images/overlay.png"
-    this.overlayBg = new Image()
-    this.overlayBg.src = "assets/images/overlay-bg.png"
+  }
+}
+
+class GambaProc {
+  constructor(game) {
+    this.game = game
+    this.rolls = [
+      itemKeys[(Math.random() * itemKeys.length)>>0],
+      itemKeys[(Math.random() * itemKeys.length)>>0],
+      itemKeys[(Math.random() * itemKeys.length)>>0],
+    ]
+    this.remove = false
+    this.selected = new WrapCounter(0, 2)
+    this.img = assets.images.tocky.img
+    this.loading = 0
+    this.tapes = [new SlotMachineTape(), new SlotMachineTape(), new SlotMachineTape()]
+    this.state = "loading"
+  }
+
+  update(frame) {
+    this.game.player.controller.updateInventory(this.game.player)
+    switch (this.state) {
+    case "loading":
+      if (this.loading < 10) this.loading++
+      else this.state = "idle"
+      break
+    case "idle":
+      if (keys["usePrimary"] == 1){
+        if (this.game.spins.current > 0) {
+          this.game.spins.dec()
+          this.state = "spin"
+          for (let i in this.tapes) {
+            this.tapes[i].reset()
+          }
+        } else {
+          this.remove = true
+        }
+      }
+      break
+    case "spin":
+      let done = true
+      for (let i in this.tapes) {
+        this.tapes[i].update()
+        if (this.tapes[i].speed != 0){
+          done = false
+        }
+      }
+      if (done) {
+        this.state = "select"
+        for (let i in this.tapes) {
+          this.rolls[i] = this.tapes[i].tape[1]
+        }
+      }
+      break
+    case "select":
+      if (keys["right"] == 1) {
+        this.selected.inc()
+      }
+      if (keys["left"] == 1) {
+        this.selected.dec()
+      }
+      if (keys["usePrimary"] == 1) {
+        let selected = this.rolls[this.selected.current]
+        let tier = 0
+        for (let i in this.rolls) {
+          if (this.rolls[i] == selected) tier++
+        }
+        if (this.game.player.inventory.tryPlaceItem(selected, tier)) {
+          this.state = "idle"
+        } else {
+          procs.overlays.push(new ConfirmProc("Confirm?", "Replace an item in inventory?", replace => {
+            if (replace) {
+              this.game.player.inventory.placeItem(selected, tier)
+              this.state = "idle"
+            }
+          }))
+        }
+      }
+      break
+    }
+  }
+
+  draw() {
+    let pos = 1 - this.loading / 10
+    c.drawImage(this.img, 40, -400 * pos)
+
+    if (this.state == "idle" && frame % 60 < 30) {
+      for (let i = 0; i < 3; i++) {
+        c.fillStyle = "red"
+        c.fillRect(155 + i * 112, 83, 107, 193)
+      }
+    }
+
+    if (this.state == "spin") {
+      let windowWidth = 145 + 112 * 2 + 83
+      let windowHeight = 193
+      c.save()
+      c.beginPath()
+      c.rect(145, 83, windowWidth, windowHeight)
+      c.clip()
+      for (let i = 0; i < 3; i++) {
+        this.tapes[i].draw(145 + i * 112, 83, windowHeight)
+      }
+      c.restore()
+    }
+
+    if (this.state == "select") {
+      c.fillStyle = "red"
+      c.fillRect(155 + this.selected.current * 112, 83, 107, 193)
+
+      let selected = this.rolls[this.selected.current]
+
+      for (let i = 0; i < 3; i++) {
+        let itemName = this.rolls[i]
+        let item = items[itemName]
+        if (itemName == selected) {
+          c.fillStyle = "rgba(255, 0, 0, 0.5)"
+          c.fillRect(155 + i * 112, 83, 107, 193)
+        }
+        let img = assets.images[item.img + "128"].img
+        c.drawImage(img, 145 + i * 112, 112)
+      }
+    }
+
+  }
+
+  open() {
+    
+  }
+
+  close() {
+    
+  }
+}
+
+
+class ConfirmProc {
+  constructor(title, text, cb) {
+    this.title = title
+    this.text = text
+    this.cb = cb
+    this.remove = false
+    this.img = assets.images.confirm.img
+  }
+
+  update(frame) {
+    if (keys["usePrimary"] == 1) {
+      this.cb(true)
+      this.remove = true
+    }
+    if (keys["useSecondary"] == 1) {
+      this.cb(false)
+      this.remove = true
+    }
+  }
+
+  draw() {
+    c.drawImage(this.img, 0, 0)
+    c.fillStyle = "white"
+    c.font = "30px arial"
+    c.textAlign = "center"
+    let x = 321
+    c.fillText(this.title, x, 190)
+    c.font = "18px arial"
+    if (typeof this.text == "string") {
+      c.fillText(this.text, x, 255)
+    } else {
+      for (let i = 0; i < 3; i++) {
+        c.fillText(this.text[i], x, 255 + i * 30)
+      }
+    }
+  }
+
+  open() {
+    
   }
 
   close() {

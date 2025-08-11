@@ -12,6 +12,8 @@ const AIR_RES = 0.97
 const PLAYER_SPEED = 5
 const FRICTION = 0.80
 let debug = true
+let frame = 0
+let freezeFrames = 0
 let procs = new ProcManager()
 procs.open(new GameProc())
 let lastFrameTime = Date.now()
@@ -25,8 +27,11 @@ function redraw(ts) {
 
 
 function update() {
+  if (freezeFrames-- > 0) return
   procs.update()
+  frame++
 }
 
 redraw(0)
 setInterval(update, 1000/60)
+

@@ -3,6 +3,7 @@ let keyMap = {
   "KeyA": "left",
   "KeyW": "up",
   "KeyS": "down",
+  "ControlLeft": "sprint",
   "KeyU": "usePrimary",
   "KeyI": "useSecondary",
   "KeyO": "parry",
@@ -19,8 +20,9 @@ let keyMap = {
 let keys = {
   "right": 0,
   "left": 0,
-  "top": 0,
+  "up": 0,
   "down": 0,
+  "sprint": 0,
   "usePrimary": 0,
   "useSecondary": 0,
   "parry": 0,

@@ -9,7 +9,9 @@ class Entity {
     this.remove = false
     this.unit = false
     this.direction = 1
-    this.effect = new Effect()
+    this.aim = 0
+    this.remote = new Remote()
+    this.effects = new Effects()
     this.useAirRes = undefined
     this.lifespan = undefined
     this.health = undefined
@@ -46,6 +48,13 @@ class Entity {
     return [hbX, hbY, hbWidth, hbHeight]
   }
 
+  physicalArm() {
+    if (!this.arm) return [...this.position]
+    let [posX, posY] = this.position
+    let [armX, armY] = this.arm
+    return [posX + armX, posY + armY]
+  }
+
   draw() {
     let pos_x = this.position[0]>>0
     let pos_y = this.position[1]>>0
@@ -78,6 +87,7 @@ class Entity {
     if (this.inventory) {
       this.inventory.getSelected()?.draw(this, flip)
     }
+    this.effects.draw(this)
   }
 
   update(game) {
@@ -85,8 +95,9 @@ class Entity {
       this.remove = true
       return
     }
-    if (this.effect.current) {
-      this.effect.update(game, this)
+    this.effects.update(game, this)
+    if (this.remote.current) {
+      this.remote.update(game, this)
     } else {
       this.controller?.update(game, this)
     }
@@ -153,8 +164,7 @@ class Entity {
         }
       }
     }
-    this.position[0] = positionFix[0]
-    this.position[1] = positionFix[1]
+    this.position = [...positionFix]
 
     this.position[0] += this.velocity[0]
     this.position[1] += this.velocity[1]
@@ -231,7 +241,18 @@ class PlayerLifespan {
   }
 }
 
-class Effect {
+class CBLifespan {
+  constructor(cb) {
+    this.cb = cb
+  }
+
+  update(){}
+  remove(game, entity) {
+    this.cb(game, entity)
+  }
+}
+
+class Remote {
   constructor() {
     this.scheduled = undefined
     this.current = undefined
@@ -256,5 +277,27 @@ class Effect {
 
   get() {
     return this.scheduled
+  }
+}
+
+class Effects {
+  constructor() {
+    this.active = []
+  }
+
+  update(game, entity) {
+    if (this.active.length == 0) return
+    
+    for (let i in this.active) {
+      this.active[i].update(game, entity)
+    }
+
+    this.active = this.active.filter(effect => !effect.remove)
+  }
+
+  draw(entity) {
+    for (let i in this.active) {
+      this.active[i].draw(entity)
+    }
   }
 }

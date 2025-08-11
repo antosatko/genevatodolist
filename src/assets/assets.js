@@ -44,7 +44,17 @@ let assetTable = {
     "stab": {
       "anim": "stab",
       "hitbox": [10, 10, 80, 44],
-    }
+    },
+    "lahvicka": {
+      "img": "lahvicka",
+      "hitbox": [3, 3, 13, 13],
+      "physical": true,
+      "useAirRes": true,
+    },
+    "cloud": {
+      "anim": "poison",
+      "hitbox": [5, 5, 59, 59],
+    },
   },
   "images": {
     "dobrak": {
@@ -59,14 +69,36 @@ let assetTable = {
     },
     "sekacek": {
       "flip": true,
+      "img128": true,
       "res": [64, 64],
     },
     "vidlicka": {
+      "img128": true,
       "res": [64, 64],
     },
     "warcrime": {
+      "img128": true,
       "res": [32, 32],
-    }
+    },
+    "lahvicka": {
+      "img128": true,
+      "res": [16, 16],
+    },
+    "lahvicka32": {
+      "res": [32, 32],
+    },
+    "tocky": {
+      "res": [560, 400],
+    },
+    "confirm": {
+      "res": [640, 480],
+    },
+    "token": {
+      "res": [16, 16],
+    },
+    "tokenslot": {
+      "res": [16, 16],
+    },
   },
   "animations": {
     "portal": {
@@ -93,7 +125,14 @@ let assetTable = {
       "res": [100, 64],
       "range": [0, 7],
       "fps": 30,
-    }
+    },
+    "poison": {
+      "path": null,
+      "flip": false,
+      "res": [64, 64],
+      "range": [0, 10],
+      "fps": 3,
+    },
   },
 }
 
@@ -153,22 +192,28 @@ class AnimationInstance {
     this.desc = assets["animations"][name]
     this.current = 0
     this.step = this.desc.fps / 60
+    this.start = frame
   }
 
   getFrame(freeze, flip) {
-    let frame = (this.current>>0) % this.desc.frames.length
-    if (!freeze) this.current += this.step
-    return flip ? this.desc.framesFlip[frame] : this.desc.frames[frame]
+    this.current = this.step * (frame - this.start)
+    let currentFrame = (this.current>>0) % this.desc.frames.length
+    return flip ? this.desc.framesFlip[currentFrame] : this.desc.frames[currentFrame]
   }
 }
 
+const _128x128 = [128, 128]
 class ObjTable {
   constructor () {
     this.images = {}
     this.animations = {}
     for (let image in assetTable["images"]) {
-      let {res, flip} = assetTable["images"][image]
+      let {res, flip, img128} = assetTable["images"][image]
       this.images[image] = new ImgDesc(res, image, flip)
+      if (img128) {
+        let name = image + "128"
+        this.images[name] = new ImgDesc(_128x128, name, false)
+      }
     }
     for (let animation in assetTable["animations"]) {
       let {res, range, fps, flip} = assetTable["animations"][animation]
