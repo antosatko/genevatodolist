@@ -7,6 +7,18 @@ let slotItems = {
         game.spins.add(tier);
       },
     },
+    recovery: {
+      img: "jackpot",
+      cb: function (game, tier) {
+        game.player.recoveryRate += 0.1 * tier
+      }
+    },
+    health: {
+      img: "jackpot",
+      cb: function (game, tier) {
+        game.player.health.max += 10 * tier
+      }
+    }
   },
   images: {},
 };
@@ -24,7 +36,7 @@ class SlotMachineTape {
   }
 
   reset() {
-    this.speed = Math.random() * 0.3 + 0.1;
+    this.speed = Math.random() * 0.2 + 0.08;
     this.tape = [];
     for (let i = 0; i < 2; i++) {
       this.tape[i] = slotItemKeys[(Math.random() * slotItemKeys.length) >> 0];
@@ -32,9 +44,9 @@ class SlotMachineTape {
   }
 
   update() {
-    this.speed *= 0.995;
+    this.speed *= 0.993;
 
-    if (this.speed < 0.02 && this.position > 0.18 && this.position < 0.2) {
+    if (this.speed < 0.05 && this.position > 0.18 && this.position < 0.2) {
       this.speed = 0;
       this.position = 0.2;
     }

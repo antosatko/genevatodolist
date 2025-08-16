@@ -3,9 +3,48 @@ let items = {
     img: "sekacek",
     joint: [37, 57],
     cooldown: 250,
-    secondary: function (game, entity, item) {},
     primaryRecovery: 60,
-    primary: function (game, entity, item) {},
+    primary: function (game, entity, item) {
+      let hb = entity.physicalHitbox();
+      let attackHb = assetTable.animations.stab.res;
+      let stabX =
+        hb[0] + (entity.direction == 1 ? hb[2] : -attackHb[1] - hb[2]);
+      let stabY = hb[1] + entity.aim * 30;
+
+      let stab = new Entity([stabX, stabY], "stab");
+      stab.direction = entity.direction;
+      stab.lifespan = new TimerLifespan(15)
+      stab.controller = new AttackControllerBuilder(entity, 3 - item.tier.ratio() * 2)
+        .withRecovery(-2)
+        .withRemote(new StunRemote([entity.direction * 12, -2.5]))
+        .withEffects([new BleedEffect(entity, 1 + item.tier.ratio() * 2, 20, 90)])
+        .build()
+      let wait = new WaitRemote(stab)
+      entity.remote.set(wait)
+      game.entities.push(stab)
+    },
+    secondary: function (game, entity, item) {
+      let timeout = new TimeoutRemote(20 - (item.tier.ratio() * 15)>>0, e => {
+        let hb = entity.physicalHitbox();
+        let attackHb = assetTable.animations.stab.res;
+        let stabX =
+          hb[0] + (entity.direction == 1 ? hb[2] : -attackHb[1] - hb[2]);
+        let stabY = hb[1] + entity.aim * 30;
+
+        let stab = new Entity([stabX, stabY], "stab");
+        stab.direction = entity.direction;
+        stab.lifespan = new TimerLifespan(15)
+        stab.controller = new AttackControllerBuilder(entity, 5 - item.tier.ratio() * 5)
+          .withRecovery(-2)
+          .withRemote(new StunRemote([entity.direction * 12, -2.5]))
+          .withEffects([new BleedEffect(entity, 1, 5, 70)])
+          .build()
+        let wait = new WaitRemote(stab)
+        entity.remote.set(wait)
+        game.entities.push(stab)
+      })
+      entity.remote.set(timeout)
+    },
   },
   vidlicka: {
     img: "vidlicka",
@@ -20,7 +59,7 @@ let items = {
 
       let swoosh = new Entity([swooshX, swooshY], "wideswoosh");
       swoosh.lifespan = new TimerLifespan(15);
-      swoosh.controller = new AttackControllerBuilder(entity, 5)
+      swoosh.controller = new AttackControllerBuilder(entity, 5 + item.tier.ratio() * 2)
         .withRecovery(-7)
         .withIgnore([entity])
         .withRemote(new StunRemote([entity.direction * 10, -2]))
@@ -42,7 +81,7 @@ let items = {
         let ball = new Entity(entity.position, "fireball");
         ball.controller = new AttackControllerBuilder(entity, 7)
           .withIgnore([entity])
-          .withMaxHits(1)
+          .withMaxHits(item.tier.current)
           .build();
         ball.velocity = [vx, vy];
         ball.effects.active.push(fragileEffect);
@@ -76,7 +115,10 @@ let items = {
     primary: function (game, entity, item) {
       let hp = entity.health;
       hp.current = Math.min(hp.max, hp.current + 25);
-      return true;
+      item.tier.dec()
+      if (item.tier.current == 0) {
+        item.remove = true
+      }
     },
   },
   lahvicka: {
@@ -95,7 +137,8 @@ let items = {
         pos[0] -= 32;
         let cloud = new Entity(pos, "cloud");
         cloud.lifespan = new TimerLifespan(80);
-        cloud.controller = new AttackControllerBuilder(entity, 0.5)
+        cloud.controller = new AttackControllerBuilder(entity, item.tier.ratio() * 2)
+          .withMaxHits(80 + item.tier.current * 5)
           .withMultihit(true)
           .build();
         game.entities.push(cloud);
@@ -109,8 +152,7 @@ let items = {
         let bottle = new Entity(entity.physicalArm(), "lahvicka");
         bottle.controller = new AttackControllerBuilder(entity, 0)
           .withMaxHits(1)
-          .withRemote(new StunRemote([0, 0], 80))
-          .withEffects([new PoisonEffect(5, 15, 600)])
+          .withEffects([new PoisonEffect(2 + item.tier.ratio() * 1.5, 10, 100)])
           .withDelay(60)
           .build();
         bottle.velocity = [(i - 1) * 1, -7];
@@ -159,6 +201,10 @@ class CheckedCounter {
   dec() {
     return this.add(-1);
   }
+
+  ratio() {
+    return (this.current - this.min) / (this.max - this.min)
+  }
 }
 
 class WrapCounter {
@@ -189,6 +235,7 @@ class Inventory {
     ((this.slots = [undefined, undefined, undefined]),
       (this.selected = new WrapCounter(0, 2)));
     this.recovery = 0;
+    this.recoveryRate = 1
   }
 
   usePrimary(game, entity) {
@@ -197,8 +244,10 @@ class Inventory {
     if (!item?.desc.primary) return;
     if (item.desc.primaryRecovery) this.addRecovery(item.desc.primaryRecovery);
 
-    if (item.desc.primary(game, entity, item)) {
-      this.slots[this.selected] = undefined;
+    item.desc.primary(game, entity, item)
+
+    if (item.remove) {
+      this.slots[this.selected.current] = undefined
     }
   }
 
@@ -211,9 +260,11 @@ class Inventory {
 
     let cd = item.cooldown;
     if (!cd || cd.useAll()) {
-      if (item.desc.secondary(game, entity, item)) {
-        this.slots[this.selected] = undefined;
-      }
+      item.desc.secondary(game, entity, item)
+    }
+
+    if (item.remove) {
+      this.slots[this.selected.current] = undefined
     }
   }
 
@@ -272,17 +323,16 @@ class Inventory {
       let item = this.slots[i];
       if (item?.cooldown) {
         let cd = item.cooldown;
-        cd.current = Math.min(cd.max, cd.current + 1);
+        cd.current = Math.min(cd.max, cd.current + this.recoveryRate);
       }
     }
-    this.recovery = Math.max(0, this.recovery - 1);
+    this.recovery = Math.max(0, this.recovery - this.recoveryRate);
   }
 
   draw() {
-    for (let i in this.slots) {
+    for (let i = 0; i < 3; i++) {
       let item = this.slots[i];
       c.fillStyle = this.selected.current == i ? "green" : "gray";
-      i = +i;
       c.fillRect(
         8 + 33 * i,
         436,
@@ -292,6 +342,8 @@ class Inventory {
       if (!item) continue;
       let img = item.img32 ? item.img32.img : item.img.img;
       c.drawImage(img, 8 + 33 * i, 436, 32, 32);
+      c.fillStyle = "yellow"
+      c.fillRect(8 + 33 * i, 460, 32 * item.tier.ratio(), 8)
     }
   }
 }
@@ -301,6 +353,7 @@ class InventoryItem {
     this.name = name;
     this.tier = new CheckedCounter(0, 9, true);
     this.desc = items[name];
+    this.remove = false
     let img = this.desc.img;
     this.img = assets.images[img];
     let img32 = this.desc.img32;

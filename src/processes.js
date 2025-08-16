@@ -66,6 +66,21 @@ class GameProc {
       }
     }
     this.entities = this.entities.filter((e) => !e.remove);
+    let cleared = !this.entities.some(e => e?.controller?.constructor.name == "AIController"
+      || e?.controller?.constructor.name == "PortalController")
+
+    if (cleared) {
+      this.spins.inc()
+      procs.overlays.push(new GambaProc(this))
+      let budgetCap = this.stage * 5
+      while (budgetCap > 0) {
+        let budget = Math.ceil(Math.random() * budgetCap)
+        budgetCap -= budget
+        let portal = new Entity([Math.random() * 400 + 100, 70], "portal")
+        portal.controller = new PortalController(budget)
+        this.entities.push(portal)
+      }
+    }
     this.frame++;
   }
 
@@ -106,6 +121,7 @@ class GameProc {
     this.spins = new CheckedCounter(0, 9, true);
     this.spins.add(2);
     this.frame = 0;
+    this.stage = 1;
 
     this.player = new Entity([250, 200], "dobrak");
     this.player.controller = new PlayerController();
@@ -157,6 +173,17 @@ class GambaProc {
             this.remove = true;
           }
         }
+        if (keys["useSecondary"] == 1) {
+          let confirm = new ConfirmProc("Close?", [
+            "Close slotmachine",
+            "Tokens can be used later"
+          ], connfirm => {
+              if (confirm) {
+                this.remove = true
+              }
+            })
+          procs.overlays.push(confirm)
+        }
         break;
       case "spin":
         let done = true;
@@ -179,6 +206,19 @@ class GambaProc {
         }
         if (keys["left"] == 1) {
           this.selected.dec();
+        }
+        if (keys["useSecondary"] == 1) {
+          procs.overlays.push(
+            new ConfirmProc(
+              "Skip?",
+              "Rewards will be discarded",
+              confirm => {
+                if (confirm) {
+                  this.state = "idle"
+                }
+              }
+            )
+          )
         }
         if (keys["usePrimary"] == 1) {
           let selected = this.rolls[this.selected.current];
@@ -290,6 +330,7 @@ class ConfirmProc {
       c.fillText(this.text, x, 255);
     } else {
       for (let i = 0; i < 3; i++) {
+        if (!this.text[i]) continue
         c.fillText(this.text[i], x, 255 + i * 30);
       }
     }

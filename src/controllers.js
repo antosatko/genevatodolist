@@ -164,8 +164,7 @@ class AttackController {
       }
       if (this.remote) {
         this.remote.apply(other);
-        other.remote.set(this.effect);
-        console.error("pokud to vidis, tak to oprav");
+        other.remote.set(this.remote);
       }
       for (let eff in this.effects) {
         other.effects.active.push(this.effects[eff].clone());
@@ -279,6 +278,23 @@ class WaitRemote {
   }
 }
 
+class TimeoutRemote {
+  constructor(frames, cb) {
+    this.frames = frames
+    this.cb = cb
+  }
+
+  apply(entity) {}
+
+  update(entity) {
+    if (--this.frames == 0) {
+      this.cb && this.cb(entity)
+      return true
+    }
+    return false
+  }
+}
+
 class PoisonEffect {
   constructor(dmg, frequency, duration) {
     this.dmg = dmg;
@@ -304,6 +320,36 @@ class PoisonEffect {
 
   clone() {
     return new PoisonEffect(this.dmg, this.frequency, this.duration);
+  }
+}
+
+class BleedEffect {
+  constructor(parent, dmg, frequency, duration) {
+    this.parent = parent
+    this.dmg = dmg;
+    this.frequency = frequency;
+    this.duration = duration;
+    this.start = frame;
+    this.remove = false;
+    this.anim = new AnimationInstance("poison");
+  }
+
+  update(game, entity) {
+    if (frame % this.frequency == 0) {
+      entity.health.add(-this.dmg);
+      this.parent.health.add(this.dmg)
+    }
+    if (this.duration-- < 0) {
+      this.remove = true;
+    }
+  }
+
+  draw(entity) {
+    c.drawImage(this.anim.getFrame(), entity.position[0], entity.position[1]);
+  }
+
+  clone() {
+    return new BleedEffect(this.parent, this.dmg, this.frequency, this.duration);
   }
 }
 

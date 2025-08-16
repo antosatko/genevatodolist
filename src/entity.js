@@ -266,8 +266,8 @@ class Remote {
     this.current = undefined;
   }
 
-  update(entity) {
-    if (this.current?.update(entity)) {
+  update(game, entity) {
+    if (this.current?.update(game, entity)) {
       this.current = undefined;
     }
   }
@@ -279,8 +279,8 @@ class Remote {
     }
   }
 
-  set(effect) {
-    this.scheduled = effect;
+  set(remote) {
+    this.scheduled = remote;
   }
 
   get() {
