@@ -19,7 +19,7 @@ Requirements:
 
 I took a heavy inspiration from *Guilty gear*s deafult configuration. I will ignore any criticism - get good loser.
 
-The game has capability to change keybinds, let me know if you think it is an important addition.
+The game has the capability to change the keybinds, let me know if you think it is an important addition.
 
  - **Movement** - `A`, `D`, `Space`
  - **Aim** - `W`, `S`
