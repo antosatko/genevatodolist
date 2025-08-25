@@ -102,6 +102,12 @@ let assetTable = {
     jackpot128: {
       res: [128, 128],
     },
+    healthup128: {
+      res: [128, 128],
+    },
+    cdup128: {
+      res: [128, 128],
+    },
   },
   animations: {
     portal: {

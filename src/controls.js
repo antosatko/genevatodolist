@@ -15,6 +15,7 @@ let keyMap = {
   Digit1: "select1",
   Digit2: "select2",
   Digit3: "select3",
+  Escape: "escape",
 };
 
 let keys = {
@@ -34,6 +35,7 @@ let keys = {
   select1: 0,
   select2: 0,
   select3: 0,
+  escape: 0,
 };
 
 document.addEventListener("keydown", (e) => {

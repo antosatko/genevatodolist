@@ -173,7 +173,7 @@ class GambaProc {
             this.remove = true;
           }
         }
-        if (keys["useSecondary"] == 1) {
+        if (keys["useSecondary"] == 1 || keys["escape"] == 1) {
           let confirm = new ConfirmProc("Close?", [
             "Close slotmachine",
             "Tokens can be used later"
@@ -207,7 +207,7 @@ class GambaProc {
         if (keys["left"] == 1) {
           this.selected.dec();
         }
-        if (keys["useSecondary"] == 1) {
+        if (keys["useSecondary"] == 1 || keys["escape"] == 1) {
           procs.overlays.push(
             new ConfirmProc(
               "Skip?",
@@ -312,7 +312,7 @@ class ConfirmProc {
       this.cb(true);
       this.remove = true;
     }
-    if (keys["useSecondary"] == 1) {
+    if (keys["useSecondary"] == 1 || keys["escape"] == 1) {
       this.cb(false);
       this.remove = true;
     }

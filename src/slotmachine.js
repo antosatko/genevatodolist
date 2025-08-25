@@ -8,13 +8,13 @@ let slotItems = {
       },
     },
     recovery: {
-      img: "jackpot",
+      img: "cdup",
       cb: function (game, tier) {
         game.player.recoveryRate += 0.1 * tier
       }
     },
     health: {
-      img: "jackpot",
+      img: "healthup",
       cb: function (game, tier) {
         game.player.health.max += 10 * tier
       }
